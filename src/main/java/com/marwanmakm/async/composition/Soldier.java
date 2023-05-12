@@ -18,10 +18,12 @@ public class Soldier {
 
   public void equipArmor(Armor armor) {
     this.armor = armor;
+    System.out.println("Se equipo correctamente la armadura de su soldado");
   }
 
   public Soldier setRange(Range range) {
     this.range = range;
+    System.out.println("El nuevo rango es: " + this.range.getName());
     return this;
   }
 
