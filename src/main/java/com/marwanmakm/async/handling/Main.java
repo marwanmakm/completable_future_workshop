@@ -16,7 +16,7 @@ public class Main {
    * INTERRUPTED: The task has been interrupted while executing.
    */
   public static void main(String[] args) throws ExecutionException, InterruptedException, TimeoutException {
-    exceptionallyCompletedCF();
+    parallelExecution();
   }
 
   private static void completedCF() throws ExecutionException, InterruptedException, TimeoutException {
@@ -47,15 +47,15 @@ public class Main {
     //EXCEPTIONALLY_COMPLETED
     CompletableFuture<Integer> cf = CompletableFuture.supplyAsync(() -> 1 / 0);
 
-    cf.get(); //<- Esto rompe
+    //cf.get(); //<- Esto rompe
 
     //Asi se arregla
-//    cf.exceptionally(ex -> {
-//      System.out.println("Ocurrió un error: " + ex);
-//      return 0;
-//    });
-//
-//    System.out.println("Result: " + cf.get());
+    cf.exceptionally(ex -> {
+      System.out.println("Ocurrió un error: " + ex);
+      return 0;
+    }).get();
+
+    System.out.println("Result: " + cf.get());
   }
 
   private static void interruptedCF() throws ExecutionException, InterruptedException {
@@ -128,6 +128,54 @@ public class Main {
     });
 
     System.out.println("Result: " + cf.get());
+
+  }
+
+  private static void parallelExecution() throws ExecutionException, InterruptedException {
+    CompletableFuture<Void> future1
+        = CompletableFuture.supplyAsync(() -> {
+      try {
+        Thread.sleep(3000);
+        System.out.println("Hello, ID:" + Thread.currentThread().getId());
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      return null;
+    });
+    CompletableFuture<String> future2
+        = CompletableFuture.supplyAsync(() -> {
+      try {
+        Thread.sleep(2000);
+        System.out.println("Beautiful, ID:" + Thread.currentThread().getId());
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      return null;
+    });
+    CompletableFuture<String> future3
+        = CompletableFuture.supplyAsync(() -> {
+      try {
+        Thread.sleep(6000);
+        System.out.println("World, ID:" + Thread.currentThread().getId());
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      return null;
+    });
+    // como para un modelo que necesita api calls para poder avanzar
+    CompletableFuture<Void> combinedFuture
+        = CompletableFuture.allOf(future1, future2, future3);
+
+    // el que se "finalice primero", va a parar ahi y retornara ese resultado. Los otros tambien se ejecutan, pero el va a retomar con el primero q finalice.
+    CompletableFuture<Object> combinedFutureAny
+        = CompletableFuture.anyOf(future1, future2, future3);
+
+    //combinedFuture.get();
+    combinedFutureAny.get();
+
+    System.out.println("Done future1: " + future1.isDone());
+    System.out.println("Done future2: " + future2.isDone());
+    System.out.println("Done future3: " + future3.isDone());
 
   }
 
